@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포트폴리오 관리자</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #fafafa;
+    --ink: #111111;
+    --muted: #8a8a8a;
+    --line: #e6e6e6;
+    --danger: #b3441e;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--panel);
+    color: var(--ink);
+  }
+  .topbar {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar h1 {
+    font-size: 16px; font-weight: 700; margin: 0;
+  }
+  .topbar .actions { display: flex; gap: 8px; align-items: center; }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 24px 120px;
+  }
+  section.panel {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  section.panel > h2 {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 18px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 14px 0 6px;
+  }
+  label:first-of-type { margin-top: 0; }
+  input[type="text"], input[type="email"], input[type="password"], textarea {
+    width: 100%;
+    padding: 9px 11px;
+    font-size: 14px;
+    font-family: var(--sans);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink);
+  }
+  textarea { resize: vertical; min-height: 44px; }
+  input:focus, textarea:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+  .row { display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: start; }
+
+  button {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    padding: 8px 14px;
+  }
+  button:hover { background: #f2f2f2; }
+  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  button.primary:hover { background: #333; }
+  button.ghost { border-color: transparent; padding: 6px 8px; color: var(--muted); }
+  button.ghost:hover { color: var(--danger); background: transparent; }
+  button.small { padding: 6px 10px; font-size: 12px; }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  .year-block {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: var(--panel);
+  }
+  .year-block-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .year-block-head input { width: 120px; font-weight: 700; }
+  .work-card {
+    display: grid;
+    grid-template-columns: 84px 1fr auto;
+    gap: 12px;
+    align-items: start;
+    padding: 12px;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: #fff;
+  }
+  .thumb {
+    width: 84px; height: 84px;
+    border-radius: 6px;
+    background: #eee;
+    background-size: cover;
+    background-position: center;
+    border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--muted); text-align: center;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .work-card .fields { display: flex; flex-direction: column; gap: 6px; }
+  .work-card .fields input { font-size: 13px; padding: 7px 9px; }
+  .list-row {
+    display: grid; grid-template-columns: 90px 1fr auto; gap: 10px;
+    margin-bottom: 8px; align-items: start;
+  }
+  .list-row input { font-size: 13px; }
+  .add-row {
+    margin-top: 4px;
+  }
+  .hint {
+    font-size: 12px; color: var(--muted); line-height: 1.6; margin: 0 0 16px;
+  }
+  .status {
+    font-size: 12px; color: var(--muted);
+  }
+  .file-input { display: none; }
+
+  #loginScreen {
+    max-width: 320px;
+    margin: 120px auto;
+    padding: 28px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+  }
+  #loginScreen h2 { margin: 0 0 16px; font-size: 15px; }
+  #loginError { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
+</style>
+</head>
+<body>
+
+<!-- ===================== 로그인 화면 ===================== -->
+<div id="loginScreen">
+  <h2>관리자 로그인</h2>
+  <label>이메일</label>
+  <input type="email" id="loginEmail">
+  <label>비밀번호</label>
+  <input type="password" id="loginPassword">
+  <button class="primary" id="loginBtn" style="margin-top:16px; width:100%;">로그인</button>
+  <p id="loginError"></p>
+</div>
+
+<!-- ===================== 관리자 화면 ===================== -->
+<div id="adminScreen" style="display:none;">
+  <div class="topbar">
+    <h1>DAEUN CHUNG — 포트폴리오 관리자</h1>
+    <div class="actions">
+      <span class="status" id="loadStatus"></span>
+      <button id="logoutBtn">로그아웃</button>
+      <button class="primary" id="saveBtn">저장하기</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <p class="hint">
+      여기서 내용을 편집하고 <strong>저장하기</strong>를 누르면 Supabase에 바로 반영되고,
+      실제 사이트에도 즉시 적용됩니다. 이미지는 업로드하면 자동으로 Storage에 저장돼요.
+    </p>
+
+    <section class="panel">
+      <h2>기본 정보</h2>
+      <div class="row">
+        <label>이름 (1줄)</label>
+        <input type="text" id="nameLine1">
+      </div>
+      <div class="row">
+        <label>이름 (2줄)</label>
+        <input type="text" id="nameLine2">
+      </div>
+      <div class="row">
+        <label>소개 문구</label>
+        <input type="text" id="tagline">
+      </div>
+      <div class="row">
+        <label>위치</label>
+        <input type="text" id="location">
+      </div>
+      <div class="row">
+        <label>사이드바 하단</label>
+        <textarea id="sidebarNote" rows="2"></textarea>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Works (연도별)</h2>
+      <div id="yearsContainer"></div>
+      <button class="add-row" id="addYearBtn">+ 연도 추가</button>
+    </section>
+
+    <section class="panel">
+      <h2>Exhibitions</h2>
+      <div id="exhibitionsContainer"></div>
+      <button class="add-row small" id="addExhibitionBtn">+ 항목 추가</button>
+    </section>
+
+    <section class="panel">
+      <h2>CV — Education</h2>
+      <div id="cvEducationContainer"></div>
+      <button class="add-row small" id="addEducationBtn">+ 항목 추가</button>
+    </section>
+
+    <section class="panel">
+      <h2>CV — Experience</h2>
+      <div id="cvExperienceContainer"></div>
+      <button class="add-row small" id="addExperienceBtn">+ 항목 추가</button>
+    </section>
+
+    <section class="panel">
+      <h2>Contact</h2>
+      <div class="row">
+        <label>이메일</label>
+        <input type="text" id="contactEmail">
+      </div>
+      <div class="row">
+        <label>인스타그램</label>
+        <input type="text" id="contactInstagram">
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ============================================================
+     Supabase 설정 — 아래 두 값만 채워 넣으면 됩니다.
+     ============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "여기에_SUPABASE_URL_입력";
+const SUPABASE_ANON_KEY = "여기에_ANON_KEY_입력";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------- state ---------- */
+// years[].works[] 항목은 { _id, title, sub, image_url } 형태
+// _id 가 있으면 기존 DB row (update 대상), 없으면 신규 (insert 대상)
+var state = {
+  nameLine1: '', nameLine2: '', tagline: '', location: '', sidebarNote: '',
+  years: [],
+  exhibitions: [], cvEducation: [], cvExperience: [],
+  contactEmail: '', contactInstagram: ''
+};
+var deletedWorkIds = [];
+
+function $(id) { return document.getElementById(id); }
+function elc(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
+
+/* ---------- auth ---------- */
+$('loginBtn').onclick = async function () {
+  $('loginError').textContent = '';
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPassword').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    $('loginError').textContent = '로그인 실패: ' + error.message;
+    return;
+  }
+  showAdmin();
+};
+
+$('logoutBtn').onclick = async function () {
+  await sb.auth.signOut();
+  location.reload();
+};
+
+async function checkSession() {
+  const { data } = await sb.auth.getSession();
+  if (data.session) {
+    showAdmin();
+  }
+}
+
+async function showAdmin() {
+  $('loginScreen').style.display = 'none';
+  $('adminScreen').style.display = 'block';
+  await loadFromSupabase();
+}
+
+/* ---------- load from Supabase ---------- */
+async function loadFromSupabase() {
+  $('loadStatus').textContent = '불러오는 중...';
+  const [{ data: siteRow, error: siteErr }, { data: works, error: workErr }] = await Promise.all([
+    sb.from('site_content').select('data').eq('id', 1).single(),
+    sb.from('works').select('*').order('year', { ascending: false }).order('sort_order', { ascending: true })
+  ]);
+
+  if (siteErr || workErr) {
+    $('loadStatus').textContent = '불러오기 실패';
+    alert('불러오기 실패: ' + ((siteErr || workErr).message));
+    return;
+  }
+
+  const data = siteRow.data || {};
+  state.nameLine1 = data.nameLine1 || '';
+  state.nameLine2 = data.nameLine2 || '';
+  state.tagline = data.tagline || '';
+  state.location = data.location || '';
+  state.sidebarNote = data.sidebarNote || '';
+  state.exhibitions = data.exhibitions || [];
+  state.cvEducation = data.cvEducation || [];
+  state.cvExperience = data.cvExperience || [];
+  state.contactEmail = data.contactEmail || '';
+  state.contactInstagram = data.contactInstagram || '';
+
+  state.years = [];
+  (works || []).forEach(function (w) {
+    var group = state.years.find(function (g) { return g.year === w.year; });
+    if (!group) { group = { year: w.year, works: [] }; state.years.push(group); }
+    group.works.push({ _id: w.id, title: w.title, sub: w.sub, image_url: w.image_url });
+  });
+  deletedWorkIds = [];
+
+  renderAll();
+  $('loadStatus').textContent = '불러옴';
+}
+
+/* ---------- basic fields binding ---------- */
+function bindBasicFields() {
+  $('nameLine1').value = state.nameLine1 || '';
+  $('nameLine2').value = state.nameLine2 || '';
+  $('tagline').value = state.tagline || '';
+  $('location').value = state.location || '';
+  $('sidebarNote').value = state.sidebarNote || '';
+
+  $('nameLine1').oninput = function () { state.nameLine1 = this.value; };
+  $('nameLine2').oninput = function () { state.nameLine2 = this.value; };
+  $('tagline').oninput = function () { state.tagline = this.value; };
+  $('location').oninput = function () { state.location = this.value; };
+  $('sidebarNote').oninput = function () { state.sidebarNote = this.value; };
+
+  $('contactEmail').value = state.contactEmail || '';
+  $('contactInstagram').value = state.contactInstagram || '';
+  $('contactEmail').oninput = function () { state.contactEmail = this.value; };
+  $('contactInstagram').oninput = function () { state.contactInstagram = this.value; };
+}
+
+/* ---------- image upload ---------- */
+async function uploadImage(file) {
+  const ext = file.name.split('.').pop();
+  const fileName = crypto.randomUUID() + '.' + ext;
+  const { error } = await sb.storage.from('portfolio-images').upload(fileName, file);
+  if (error) {
+    alert('이미지 업로드 실패: ' + error.message);
+    return null;
+  }
+  const { data } = sb.storage.from('portfolio-images').getPublicUrl(fileName);
+  return data.publicUrl;
+}
+
+/* ---------- years / works ---------- */
+function renderYears() {
+  var container = $('yearsContainer');
+  container.innerHTML = '';
+  state.years.forEach(function (yearObj, yi) {
+    var block = elc('div', 'year-block');
+
+    var head = elc('div', 'year-block-head');
+    var yearInput = document.createElement('input');
+    yearInput.type = 'text';
+    yearInput.value = yearObj.year;
+    yearInput.oninput = function () { yearObj.year = this.value; };
+    head.appendChild(yearInput);
+
+    var addWorkBtn = document.createElement('button');
+    addWorkBtn.className = 'small';
+    addWorkBtn.textContent = '+ 작품 추가';
+    addWorkBtn.onclick = function () {
+      yearObj.works.push({ title: '', sub: '', image_url: '' });
+      renderYears();
+    };
+    head.appendChild(addWorkBtn);
+
+    var delYearBtn = document.createElement('button');
+    delYearBtn.className = 'ghost small';
+    delYearBtn.textContent = '연도 삭제';
+    delYearBtn.onclick = function () {
+      if (confirm('이 연도와 안의 작품이 모두 삭제됩니다. 계속할까요?')) {
+        yearObj.works.forEach(function (w) { if (w._id) deletedWorkIds.push(w._id); });
+        state.years.splice(yi, 1);
+        renderYears();
+      }
+    };
+    head.appendChild(delYearBtn);
+
+    block.appendChild(head);
+
+    yearObj.works.forEach(function (work, wi) {
+      var card = elc('div', 'work-card');
+
+      var thumb = elc('label', 'thumb');
+      thumb.textContent = work.image_url ? '' : '이미지\n업로드';
+      if (work.image_url) thumb.style.backgroundImage = 'url(' + work.image_url + ')';
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.className = 'file-input';
+      fileInput.onchange = async function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        thumb.textContent = '업로드 중...';
+        const url = await uploadImage(file);
+        if (url) work.image_url = url;
+        renderYears();
+      };
+      thumb.appendChild(fileInput);
+      card.appendChild(thumb);
+
+      var fields = elc('div', 'fields');
+      var titleInput = document.createElement('input');
+      titleInput.type = 'text';
+      titleInput.placeholder = '작품 제목';
+      titleInput.value = work.title;
+      titleInput.oninput = function () { work.title = this.value; };
+      var subInput = document.createElement('input');
+      subInput.type = 'text';
+      subInput.placeholder = '재료 · 연도 (예: Jute, mixed media · 2025)';
+      subInput.value = work.sub;
+      subInput.oninput = function () { work.sub = this.value; };
+      fields.appendChild(titleInput);
+      fields.appendChild(subInput);
+      card.appendChild(fields);
+
+      var delWorkBtn = document.createElement('button');
+      delWorkBtn.className = 'ghost small';
+      delWorkBtn.textContent = '삭제';
+      delWorkBtn.onclick = function () {
+        if (work._id) deletedWorkIds.push(work._id);
+        yearObj.works.splice(wi, 1);
+        renderYears();
+      };
+      card.appendChild(delWorkBtn);
+
+      block.appendChild(card);
+    });
+
+    container.appendChild(block);
+  });
+}
+
+/* ---------- generic year+body list (exhibitions / cv) ---------- */
+function renderSimpleList(containerId, arrKey) {
+  var container = $(containerId);
+  container.innerHTML = '';
+  state[arrKey].forEach(function (item, i) {
+    var row = elc('div', 'list-row');
+
+    var yearInput = document.createElement('input');
+    yearInput.type = 'text';
+    yearInput.placeholder = '연도';
+    yearInput.value = item.year || '';
+    yearInput.oninput = function () { item.year = this.value; };
+
+    var bodyInput = document.createElement('input');
+    bodyInput.type = 'text';
+    bodyInput.placeholder = '내용';
+    bodyInput.value = item.body || '';
+    bodyInput.oninput = function () { item.body = this.value; delete item.placeholder; };
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'ghost small';
+    delBtn.textContent = '삭제';
+    delBtn.onclick = function () {
+      state[arrKey].splice(i, 1);
+      renderSimpleList(containerId, arrKey);
+    };
+
+    row.appendChild(yearInput);
+    row.appendChild(bodyInput);
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}
+
+function renderAll() {
+  bindBasicFields();
+  renderYears();
+  renderSimpleList('exhibitionsContainer', 'exhibitions');
+  renderSimpleList('cvEducationContainer', 'cvEducation');
+  renderSimpleList('cvExperienceContainer', 'cvExperience');
+}
+
+/* ---------- add-row buttons ---------- */
+$('addYearBtn').onclick = function () {
+  state.years.unshift({ year: '20XX', works: [] });
+  renderYears();
+};
+$('addExhibitionBtn').onclick = function () {
+  state.exhibitions.push({ year: '', body: '' });
+  renderSimpleList('exhibitionsContainer', 'exhibitions');
+};
+$('addEducationBtn').onclick = function () {
+  state.cvEducation.push({ year: '', body: '' });
+  renderSimpleList('cvEducationContainer', 'cvEducation');
+};
+$('addExperienceBtn').onclick = function () {
+  state.cvExperience.push({ year: '', body: '' });
+  renderSimpleList('cvExperienceContainer', 'cvExperience');
+};
+
+/* ---------- save to Supabase ---------- */
+$('saveBtn').onclick = async function () {
+  $('saveBtn').disabled = true;
+  $('loadStatus').textContent = '저장 중...';
+  try {
+    // 1) site_content (기본 정보 + exhibitions/CV/contact)
+    const payload = {
+      nameLine1: state.nameLine1,
+      nameLine2: state.nameLine2,
+      tagline: state.tagline,
+      location: state.location,
+      sidebarNote: state.sidebarNote,
+      exhibitions: state.exhibitions,
+      cvEducation: state.cvEducation,
+      cvExperience: state.cvExperience,
+      contactEmail: state.contactEmail,
+      contactInstagram: state.contactInstagram
+    };
+    const { error: siteErr } = await sb.from('site_content')
+      .update({ data: payload, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+    if (siteErr) throw siteErr;
+
+    // 2) works — 삭제된 항목 먼저 지우기
+    if (deletedWorkIds.length) {
+      const { error: delErr } = await sb.from('works').delete().in('id', deletedWorkIds);
+      if (delErr) throw delErr;
+      deletedWorkIds = [];
+    }
+
+    // 3) works — upsert (있으면 갱신, 없으면 새로 생성)
+    var rows = [];
+    var sortCounter = {};
+    state.years.forEach(function (yearObj) {
+      sortCounter[yearObj.year] = sortCounter[yearObj.year] || 0;
+      yearObj.works.forEach(function (w) {
+        var row = {
+          year: yearObj.year,
+          title: w.title || 'Untitled',
+          sub: w.sub || '',
+          image_url: w.image_url || '',
+          sort_order: sortCounter[yearObj.year]++
+        };
+        if (w._id) row.id = w._id;
+        rows.push(row);
+      });
+    });
+
+    if (rows.length) {
+      const { data: upserted, error: workErr } = await sb.from('works').upsert(rows).select();
+      if (workErr) throw workErr;
+      // 새로 생성된 항목에 id 채워넣기 (연속 저장 시 중복 insert 방지)
+      var idx = 0;
+      state.years.forEach(function (yearObj) {
+        yearObj.works.forEach(function (w) {
+          if (upserted && upserted[idx]) w._id = upserted[idx].id;
+          idx++;
+        });
+      });
+    }
+
+    $('loadStatus').textContent = '저장됨 · ' + new Date().toLocaleTimeString('ko-KR');
+  } catch (err) {
+    $('loadStatus').textContent = '저장 실패';
+    alert('저장 실패: ' + err.message);
+  } finally {
+    $('saveBtn').disabled = false;
+  }
+};
+
+checkSession();
+</script>
+</body>
+</html>
