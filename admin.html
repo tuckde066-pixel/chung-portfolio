@@ -254,10 +254,10 @@
      ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = "https://bdmeqpouogodgaoltkmh.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://bdmeqpouogodgaoltkmh.supabase.co";
 const SUPABASE_KEY = "sb_publishable_sTlAlp82aYGJyxEJTG5HDw_Gze1ax6B";
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ---------- state ---------- */
 // years[].works[] 항목은 { _id, title, sub, image_url } 형태
