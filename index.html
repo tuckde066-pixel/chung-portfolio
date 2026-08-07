@@ -543,7 +543,7 @@ async function loadSite() {
       var work = el('div', { class: 'work' });
       var img = el('div', { class: 'work-image' });
       if (w.image_url) {
-        img.appendChild(el('img', { attrs: { src: w.image_url, alt: w.title || '' } }));
+        img.appendChild(el('img', { attrs: { src: w.image_url, alt: w.title || '', loading: 'lazy', decoding: 'async' } }));
       } else {
         img.setAttribute('data-caption', '이미지를 준비 중입니다');
         img.appendChild(el('div', { class: 'placeholder-texture' }));
